@@ -10,6 +10,12 @@ Keep your machine awake from the launcher — indefinitely, for a duration, unti
 
 Coffee is a [Vicinae](https://vicinae.com) extension for Linux and macOS, inspired by the [Raycast Coffee extension](https://github.com/raycast/extensions/tree/00440c429c10952b393d21dfc56c4c23bab9e9a9/extensions/coffee/). Use the dashboard, or run a no-view command to stay awake, stop, or toggle.
 
+## Screenshots
+
+![Caffeinated dashboard with keep-awake durations](./.github/assets/screenshot-1.png)
+
+[See more screenshots](./.github/assets/)
+
 ## Features
 
 - Stay awake indefinitely, for a duration (`45m`, `1h30m`), until a time (`5pm`), or while an app is running
