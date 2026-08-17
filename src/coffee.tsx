@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Action, ActionPanel, Color, Icon, List, openExtensionPreferences } from "@vicinae/api";
-import { applySchedules, currentStatus, toggle } from "./lib/coffee";
+import { toggle } from "./lib/coffee";
 import { readState } from "./lib/state";
-import { caffeinateAndNotify, decaffeinateAndNotify, fail } from "./lib/feedback";
+import { applySchedulesAndNotify, caffeinateAndNotify, decaffeinateAndNotify, fail } from "./lib/feedback";
 import { formatDuration } from "./lib/time";
 import { sortSchedules } from "./lib/schedule";
 import { NewScheduleAction, ScheduleItem } from "./schedule";
@@ -16,11 +16,12 @@ const QUICK = [
 ];
 
 export default function Command() {
-  const [status, setStatus] = useState<Status>(() => applySchedules());
+  const [status, setStatus] = useState<Status>(() => applySchedulesAndNotify());
   const [now, setNow] = useState(Date.now());
+  const [search, setSearch] = useState("");
 
   const refresh = useCallback(() => {
-    setStatus(currentStatus());
+    setStatus(applySchedulesAndNotify());
     setNow(Date.now());
   }, []);
 
@@ -41,6 +42,7 @@ export default function Command() {
     <List
       isShowingDetail
       searchBarPlaceholder="Search Coffee"
+      onSearchTextChange={setSearch}
       actions={
         <ActionPanel>
           <NewScheduleAction onCreated={refresh} />
@@ -48,6 +50,11 @@ export default function Command() {
         </ActionPanel>
       }
     >
+      <List.EmptyView
+        title={search.trim() ? "No matching items" : "Coffee"}
+        description={search.trim() ? "Try a different search." : "Caffeinate, pick a duration, or add a weekly schedule."}
+        icon={Icon.Moon}
+      />
       <List.Section title="Status">
         <List.Item
           title={status.caffeinated ? "Caffeinated" : "Decaffeinated"}

@@ -32,6 +32,13 @@ export function isPidAlive(pid: number): boolean {
 }
 
 export function stopPid(pid: number): void {
+  if (!pid || pid <= 0) return;
+  try {
+    process.kill(-pid, "SIGTERM");
+    return;
+  } catch {
+    // process is not a group leader
+  }
   if (!isPidAlive(pid)) return;
   try {
     process.kill(pid, "SIGTERM");
@@ -112,6 +119,10 @@ function spawnGnome(options: SpawnInhibitOptions) {
   if (preferences["prevent-system"]) {
     args.push("--inhibit", "suspend");
     args.push("--inhibit", "idle");
+  }
+  if (!preferences["prevent-display"] && !preferences["prevent-system"]) {
+    args.push("--inhibit", "idle");
+    args.push("--inhibit", "suspend");
   }
   args.push("--", ...waitCommand(options));
 

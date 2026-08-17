@@ -23,16 +23,16 @@ const SKIP = new Set([
 
 export function listRunningProcesses(): RunningProcess[] {
   const processes = process.platform === "linux" ? fromProc() : fromPs();
-  const unique = new Map<string, RunningProcess>();
+  const results: RunningProcess[] = [];
 
   for (const entry of processes) {
     const name = cleanName(entry.name);
     if (!name || SKIP.has(name.toLowerCase())) continue;
     if (name.startsWith("[") || name.startsWith("-")) continue;
-    if (!unique.has(name)) unique.set(name, { pid: entry.pid, name });
+    results.push({ pid: entry.pid, name });
   }
 
-  return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return results.sort((a, b) => a.name.localeCompare(b.name) || a.pid - b.pid);
 }
 
 function fromProc(): RunningProcess[] {
@@ -76,7 +76,7 @@ function fromPs(): RunningProcess[] {
       })
       .filter((value): value is RunningProcess => value !== null);
   } catch {
-    return [];
+    throw new Error("Unable to list running processes. Check that ps is installed and try again.");
   }
 }
 

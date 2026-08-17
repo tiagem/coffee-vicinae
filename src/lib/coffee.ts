@@ -130,18 +130,11 @@ export function updateSchedule(id: string, patch: Partial<Schedule>): void {
   });
 }
 
-export function removeSchedule(id: string): void {
-  const state = readState();
-  const removing = state.schedules.find((schedule) => schedule.id === id);
-  const window = removing ? activeWindow(removing) : null;
-
+export function removeSchedule(id: string): Status {
   updateState((current) => {
     current.schedules = current.schedules.filter((schedule) => schedule.id !== id);
   });
-
-  if (window && state.session?.mode === "schedule") {
-    decaffeinate();
-  }
+  return applySchedules();
 }
 
 function reconcile() {

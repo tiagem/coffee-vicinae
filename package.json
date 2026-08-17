@@ -20,7 +20,8 @@
     "macOS"
   ],
   "license": "MIT",
-  "author": "tiago",
+  "author": "tiagemiguel",
+  "version": "1.0.0",
   "contributors": [],
   "pastContributors": [],
   "icon": "extension-icon.png",
@@ -118,7 +119,7 @@
     },
     {
       "name": "prevent-system",
-      "title": "Inhibit",
+      "title": "",
       "description": "Prevent the system from sleeping (sleep inhibit / caffeinate -i)",
       "type": "checkbox",
       "required": false,
@@ -127,7 +128,7 @@
     },
     {
       "name": "prevent-lid",
-      "title": "Inhibit",
+      "title": "",
       "description": "On Linux, also block sleep when the lid is closed. Ignored on macOS.",
       "type": "checkbox",
       "required": false,
@@ -136,7 +137,7 @@
     },
     {
       "name": "prevent-disk",
-      "title": "Inhibit",
+      "title": "",
       "description": "On macOS, prevent the disk from idle-sleeping (caffeinate -m). Ignored on Linux.",
       "type": "checkbox",
       "required": false,

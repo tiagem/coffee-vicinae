@@ -67,6 +67,7 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
   const duration = props.arguments.duration?.trim();
   const parsed = duration ? parseDuration(duration) : null;
   const [handled, setHandled] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!duration || handled) return;
@@ -83,14 +84,26 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
   };
 
   return (
-    <List searchBarPlaceholder="Search">
-      {duration && !parsed ? (
-        <List.EmptyView
-          title="Unknown Duration"
-          description="Enter a duration like 45m or 1h."
-          icon={Icon.Clock}
-        />
-      ) : null}
+    <List searchBarPlaceholder="Search" onSearchTextChange={setSearch}>
+      <List.EmptyView
+        title={
+          duration && !parsed
+            ? "Unknown duration"
+            : search.trim()
+              ? "No matching durations"
+              : "Pick a duration"
+        }
+        description={
+          duration && !parsed
+            ? "Enter a duration like 45m or 1h."
+            : search.trim()
+              ? "Try a different search."
+              : "Choose a preset or set a custom duration."
+        }
+        icon={Icon.Clock}
+      />
+      {duration && !parsed ? null : (
+        <>
       <List.Section title="Duration">
         {PRESETS.map((preset) => (
           <List.Item
@@ -126,6 +139,8 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
           }
         />
       </List.Section>
+        </>
+      )}
     </List>
   );
 }

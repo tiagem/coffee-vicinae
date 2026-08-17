@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 
-export function usePromise<T>(fn: () => T | Promise<T>): { value: T | undefined; loading: boolean } {
+export function usePromise<T>(fn: () => T | Promise<T>): {
+  value: T | undefined;
+  error: Error | undefined;
+  loading: boolean;
+} {
   const [value, setValue] = useState<T | undefined>();
+  const [error, setError] = useState<Error | undefined>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -10,10 +15,13 @@ export function usePromise<T>(fn: () => T | Promise<T>): { value: T | undefined;
     Promise.resolve()
       .then(fn)
       .then((result) => {
-        if (!cancelled) setValue(result);
+        if (cancelled) return;
+        setError(undefined);
+        setValue(result);
       })
-      .catch(() => {
-        if (!cancelled) setValue(undefined);
+      .catch((caught: unknown) => {
+        if (cancelled) return;
+        setError(caught instanceof Error ? caught : new Error(String(caught)));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -23,5 +31,5 @@ export function usePromise<T>(fn: () => T | Promise<T>): { value: T | undefined;
     };
   }, [fn]);
 
-  return { value, loading };
+  return { value, error, loading };
 }

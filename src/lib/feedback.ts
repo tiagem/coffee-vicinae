@@ -1,6 +1,23 @@
 import { showHUD, showToast, Toast } from "@vicinae/api";
-import { CaffeinateRequest, caffeinate, decaffeinate, toggle } from "./coffee";
+import { applySchedules, CaffeinateRequest, caffeinate, currentStatus, decaffeinate, toggle } from "./coffee";
 import { Status } from "./types";
+
+let lastApplyError = "";
+
+export function applySchedulesAndNotify(): Status {
+  try {
+    const status = applySchedules();
+    lastApplyError = "";
+    return status;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message !== lastApplyError) {
+      lastApplyError = message;
+      void fail(error);
+    }
+    return currentStatus();
+  }
+}
 
 export async function caffeinateAndNotify(request: CaffeinateRequest, message: string): Promise<Status | null> {
   try {

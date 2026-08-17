@@ -15,7 +15,7 @@ import {
 } from "@vicinae/api";
 import { Schedule, Weekday } from "./lib/types";
 import { readState } from "./lib/state";
-import { addSchedules, applySchedules, removeSchedule, updateSchedule } from "./lib/coffee";
+import { addSchedules, removeSchedule, updateSchedule } from "./lib/coffee";
 import {
   activeWindow,
   formatDayList,
@@ -29,7 +29,7 @@ import {
   WEEK_ORDER,
 } from "./lib/schedule";
 import { formatClock, normalizeClockInput, titleDay } from "./lib/time";
-import { fail } from "./lib/feedback";
+import { applySchedulesAndNotify, fail } from "./lib/feedback";
 
 const newShortcut = Keyboard.Shortcut.Common.New as Keyboard.Shortcut.Common;
 const removeShortcut = Keyboard.Shortcut.Common.Remove as Keyboard.Shortcut.Common;
@@ -40,20 +40,23 @@ export default function ScheduleCommand() {
 
 export function ScheduleView() {
   const [tick, setTick] = useState(0);
+  const [search, setSearch] = useState("");
   const schedules = useMemo(() => {
     void tick;
-    applySchedules();
+    applySchedulesAndNotify();
     return sortSchedules(readState().schedules);
   }, [tick]);
 
   const refresh = () => setTick((value) => value + 1);
   const todays = schedules.filter((schedule) => runsToday(schedule));
   const rest = schedules.filter((schedule) => !runsToday(schedule));
+  const searching = Boolean(search.trim());
 
   return (
     <List
       isShowingDetail
       searchBarPlaceholder="Search schedules"
+      onSearchTextChange={setSearch}
       actions={
         <ActionPanel>
           <NewScheduleAction onCreated={refresh} />
@@ -61,8 +64,12 @@ export function ScheduleView() {
       }
     >
       <List.EmptyView
-        title="No schedules yet"
-        description="Add a weekly window to stay awake. Overnight is fine — 11:00 to 08:00 runs until morning."
+        title={searching ? "No matching schedules" : "No schedules yet"}
+        description={
+          searching
+            ? "Try a different search."
+            : "Add a weekly window to stay awake. Overnight is fine — 11:00 to 08:00 runs until morning."
+        }
         icon={Icon.Calendar}
         actions={
           <ActionPanel>
@@ -121,7 +128,7 @@ export function ScheduleItem({ schedule, onChange }: { schedule: Schedule; onCha
               icon={Icon.Play}
               onAction={() => {
                 updateSchedule(schedule.id, { paused: false, skipUntil: null });
-                applySchedules();
+                applySchedulesAndNotify();
                 onChange();
               }}
             />
@@ -131,7 +138,7 @@ export function ScheduleItem({ schedule, onChange }: { schedule: Schedule; onCha
               icon={Icon.Pause}
               onAction={() => {
                 updateSchedule(schedule.id, { paused: true });
-                if (window) applySchedules();
+                if (window) applySchedulesAndNotify();
                 onChange();
               }}
             />
@@ -148,8 +155,11 @@ export function ScheduleItem({ schedule, onChange }: { schedule: Schedule; onCha
                 primaryAction: { title: "Delete Schedule", style: Alert.ActionStyle.Destructive },
               });
               if (!confirmed) return;
-              removeSchedule(schedule.id);
-              applySchedules();
+              try {
+                removeSchedule(schedule.id);
+              } catch (error) {
+                void fail(error);
+              }
               onChange();
             }}
           />

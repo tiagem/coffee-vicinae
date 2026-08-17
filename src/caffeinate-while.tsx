@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Action,
   ActionPanel,
@@ -10,7 +10,7 @@ import {
   popToRoot,
 } from "@vicinae/api";
 import { listRunningProcesses } from "./lib/processes";
-import { caffeinateAndNotify } from "./lib/feedback";
+import { caffeinateAndNotify, fail } from "./lib/feedback";
 import { usePromise } from "./lib/use-promise";
 
 async function caffeinateWhile(pid: number, name: string) {
@@ -24,8 +24,12 @@ async function caffeinateWhile(pid: number, name: string) {
 export default function Command() {
   const [query, setQuery] = useState("");
   const processes = usePromise(listRunningProcesses);
-  const apps = usePromise(loadApps);
-  const frontmost = usePromise(loadFrontmost);
+  const apps = usePromise(getApplications);
+  const frontmost = usePromise(getFrontmostApplication);
+
+  useEffect(() => {
+    if (apps.error) void fail(apps.error);
+  }, [apps.error]);
 
   const appByName = useMemo(() => {
     const map = new Map<string, Application>();
@@ -44,25 +48,39 @@ export default function Command() {
     });
   }, [processes.value, query]);
 
-  const frontmostMatch = frontmost.value
-    ? items.find((process) => namesMatch(process.name, frontmost.value?.name ?? ""))
-    : undefined;
+  const frontmostMatch =
+    !frontmost.error && frontmost.value
+      ? items.find((process) => namesMatch(process.name, frontmost.value?.name ?? ""))
+      : undefined;
+
+  const searching = Boolean(query.trim());
+  const emptyTitle = processes.error
+    ? "Unable to list apps"
+    : searching
+      ? "No matching apps"
+      : "No apps found";
+  const emptyDescription = processes.error
+    ? processes.error.message
+    : searching
+      ? "Try a different search."
+      : "Open an app, then run Caffeinate While again.";
 
   return (
     <List
       isLoading={processes.loading}
-      searchBarPlaceholder="Search"
+      searchBarPlaceholder="Search running apps"
       filtering={false}
       onSearchTextChange={setQuery}
     >
       {items.length === 0 && !processes.loading ? (
-        <List.EmptyView title="No Apps Found" icon={Icon.AppWindowList} />
+        <List.EmptyView title={emptyTitle} description={emptyDescription} icon={Icon.AppWindowList} />
       ) : null}
       {frontmostMatch ? (
         <List.Section title="Frontmost">
           <ProcessItem process={frontmostMatch} app={matchApp(frontmostMatch.name, appByName)} />
         </List.Section>
       ) : null}
+      {items.length > 0 ? (
       <List.Section title="Running" subtitle={`${items.length}`}>
         {items
           .filter((process) => process.pid !== frontmostMatch?.pid)
@@ -74,6 +92,7 @@ export default function Command() {
             />
           ))}
       </List.Section>
+      ) : null}
     </List>
   );
 }
@@ -102,14 +121,6 @@ function ProcessItem({
       }
     />
   );
-}
-
-function loadApps() {
-  return getApplications().catch(() => [] as Application[]);
-}
-
-function loadFrontmost() {
-  return getFrontmostApplication().catch(() => null);
 }
 
 function matchApp(name: string, apps: Map<string, Application>): Application | undefined {
