@@ -34,10 +34,16 @@ export interface Schedule {
   skipUntil: number | null;
 }
 
+export interface CoffeeStats {
+  totalCoffees: number;
+  startedAt: number[];
+}
+
 export interface State {
-  version: 1;
+  version: 3;
   session: Session | null;
   schedules: Schedule[];
+  stats: CoffeeStats;
 }
 
 export interface Preferences {

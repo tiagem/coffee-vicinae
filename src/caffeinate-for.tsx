@@ -7,7 +7,9 @@ import {
   Icon,
   LaunchProps,
   List,
+  showToast,
   popToRoot,
+  Toast,
 } from "@vicinae/api";
 import { caffeinateAndNotify } from "./lib/feedback";
 import { formatDuration, parseDuration } from "./lib/time";
@@ -68,11 +70,18 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
   const parsed = duration ? parseDuration(duration) : null;
   const [handled, setHandled] = useState(false);
   const [search, setSearch] = useState("");
+  const durationInvalid = Boolean(duration && !parsed);
 
   useEffect(() => {
     if (!duration || handled) return;
     setHandled(true);
     if (parsed) void caffeinateFor(parsed);
+    else
+      void showToast({
+        style: Toast.Style.Failure,
+        title: "Unknown duration",
+        message: "Enter a duration like 45m or 1h.",
+      });
   }, [duration, handled, parsed]);
 
   if (duration && parsed) return null;
@@ -86,24 +95,11 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
   return (
     <List searchBarPlaceholder="Search" onSearchTextChange={setSearch}>
       <List.EmptyView
-        title={
-          duration && !parsed
-            ? "Unknown duration"
-            : search.trim()
-              ? "No matching durations"
-              : "Pick a duration"
-        }
-        description={
-          duration && !parsed
-            ? "Enter a duration like 45m or 1h."
-            : search.trim()
-              ? "Try a different search."
-              : "Choose a preset or set a custom duration."
-        }
+        title={search.trim() ? "No matching durations" : "Pick a duration"}
+        description={search.trim() ? "Try a different search." : "Choose a preset or set a custom duration."}
         icon={Icon.Clock}
       />
-      {duration && !parsed ? null : (
-        <>
+      <>
       <List.Section title="Duration">
         {PRESETS.map((preset) => (
           <List.Item
@@ -139,8 +135,7 @@ export default function Command(props: LaunchProps<{ arguments: { duration?: str
           }
         />
       </List.Section>
-        </>
-      )}
+      </>
     </List>
   );
 }

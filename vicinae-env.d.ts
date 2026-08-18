@@ -12,10 +12,10 @@ type ExtensionPreferences = {
 	/** Prevent the system from sleeping (sleep inhibit / caffeinate -i) */
 	"prevent-system": boolean;
 
-	/** On Linux, also block sleep when the lid is closed. Ignored on macOS. */
+	/** On Linux, also block sleep when the lid is closed. */
 	"prevent-lid": boolean;
 
-	/** On macOS, prevent the disk from idle-sleeping (caffeinate -m). Ignored on Linux. */
+	/** On macOS, prevent the disk from idle-sleeping (caffeinate -m). */
 	"prevent-disk": boolean;
 }
 

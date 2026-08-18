@@ -13,6 +13,12 @@ export interface CaffeinateRequest {
   reason?: string;
 }
 
+export interface CoffeeStatsSummary {
+  allTime: number;
+  thisWeek: number;
+  thisMonth: number;
+}
+
 export function currentStatus(): Status {
   const state = reconcile();
   return toStatus(state.session);
@@ -44,9 +50,28 @@ export function caffeinate(request: CaffeinateRequest): Status {
 
   updateState((state) => {
     state.session = session;
+    state.stats.totalCoffees += 1;
+    state.stats.startedAt.push(session.startedAt);
   });
 
   return toStatus(session);
+}
+
+export function totalCoffees(): number {
+  return readState().stats.totalCoffees;
+}
+
+export function coffeeStatsSummary(now = new Date()): CoffeeStatsSummary {
+  const stats = readState().stats;
+  const weekStart = startOfWeek(now).getTime();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const thisWeek = stats.startedAt.filter((entry) => entry >= weekStart).length;
+  const thisMonth = stats.startedAt.filter((entry) => entry >= monthStart).length;
+  return {
+    allTime: stats.totalCoffees,
+    thisWeek,
+    thisMonth,
+  };
 }
 
 export function decaffeinate(options?: { skipActiveSchedule?: boolean }): Status {
@@ -188,4 +213,13 @@ function summarize(session: Session, remainingMs: number | null): string {
   if (remainingMs !== null) return `${formatDuration(remainingMs)} left`;
   if (session.mode === "indefinite") return "Until you decaffeinate";
   return session.reason;
+}
+
+function startOfWeek(date: Date): Date {
+  const next = new Date(date);
+  const day = next.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  next.setDate(next.getDate() - diff);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }

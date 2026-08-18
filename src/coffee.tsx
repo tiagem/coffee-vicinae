@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Action, ActionPanel, Color, Icon, List, openExtensionPreferences } from "@vicinae/api";
-import { toggle } from "./lib/coffee";
+import { coffeeStatsSummary, toggle } from "./lib/coffee";
 import { readState } from "./lib/state";
 import { applySchedulesAndNotify, caffeinateAndNotify, decaffeinateAndNotify, fail } from "./lib/feedback";
-import { formatDuration } from "./lib/time";
+import { formatClock, formatDuration } from "./lib/time";
 import { sortSchedules } from "./lib/schedule";
 import { NewScheduleAction, ScheduleItem } from "./schedule";
 import { Status } from "./lib/types";
@@ -37,6 +37,7 @@ export default function Command() {
 
   const remaining =
     status.session?.endsAt && status.session.endsAt > now ? status.session.endsAt - now : status.remainingMs;
+  const stats = useMemo(() => coffeeStatsSummary(new Date(now)), [now, status.caffeinated]);
 
   return (
     <List
@@ -115,6 +116,34 @@ export default function Command() {
                 }}
               />
               <ActionPanel.Section>
+                <Action.Push
+                  title="Your Coffees"
+                  icon={Icon.BarChart}
+                  target={<StatisticsView stats={stats} />}
+                />
+                <NewScheduleAction onCreated={refresh} />
+                <Action
+                  title="Settings"
+                  icon={Icon.Cog}
+                  shortcut={{ key: ",", modifiers: ["cmd"] }}
+                  onAction={openExtensionPreferences}
+                />
+              </ActionPanel.Section>
+            </ActionPanel>
+          }
+        />
+        <List.Item
+          title="Your Coffees"
+          icon={Icon.BarChart}
+          detail={
+            <List.Item.Detail
+              markdown={statisticsOverviewMarkdown(stats)}
+            />
+          }
+          actions={
+            <ActionPanel>
+              <Action.Push title="Open Your Coffees" icon={Icon.BarChart} target={<StatisticsView stats={stats} />} />
+              <ActionPanel.Section>
                 <NewScheduleAction onCreated={refresh} />
                 <Action
                   title="Settings"
@@ -134,6 +163,7 @@ export default function Command() {
             key={preset.title}
             title={preset.title}
             icon={Icon.Clock}
+            detail={<List.Item.Detail markdown={quickPresetMarkdown(preset.ms, now)} />}
             actions={
               <ActionPanel>
                 <Action
@@ -181,6 +211,78 @@ export default function Command() {
   );
 }
 
+function StatisticsView({ stats }: { stats: { allTime: number; thisWeek: number; thisMonth: number } }) {
+  return (
+    <List isShowingDetail searchBarPlaceholder="Search your coffees">
+      <List.Section title="Your Coffees">
+        <List.Item
+          title="All Time"
+          subtitle="Since you started using Coffee"
+          icon={Icon.Clock}
+          accessories={[{ text: `${stats.allTime}` }]}
+          detail={
+            <List.Item.Detail
+              markdown={[
+                "# All Time",
+                "",
+                "Total sessions ever brewed on this machine.",
+                "",
+                `**${stats.allTime}** coffee session${stats.allTime === 1 ? "" : "s"}.`,
+              ].join("\n")}
+            />
+          }
+        />
+        <List.Item
+          title="This Week"
+          subtitle="Sessions brewed since Monday"
+          icon={Icon.Calendar}
+          accessories={[{ text: `${stats.thisWeek}` }]}
+          detail={
+            <List.Item.Detail
+              markdown={[
+                "# This Week",
+                "",
+                "Counts sessions started during the current week.",
+                "",
+                `**${stats.thisWeek}** coffee session${stats.thisWeek === 1 ? "" : "s"} this week.`,
+              ].join("\n")}
+            />
+          }
+        />
+        <List.Item
+          title="This Month"
+          subtitle="Sessions brewed this calendar month"
+          icon={Icon.Calendar}
+          accessories={[{ text: `${stats.thisMonth}` }]}
+          detail={
+            <List.Item.Detail
+              markdown={[
+                "# This Month",
+                "",
+                "Counts sessions started in the current calendar month.",
+                "",
+                `**${stats.thisMonth}** coffee session${stats.thisMonth === 1 ? "" : "s"} this month.`,
+              ].join("\n")}
+            />
+          }
+        />
+      </List.Section>
+    </List>
+  );
+}
+
+function statisticsOverviewMarkdown(stats: { allTime: number; thisWeek: number; thisMonth: number }): string {
+  return [
+    "# Your Coffees",
+    "",
+    "Track your caffeination habits over time.",
+    "",
+    `- **All time:** ${stats.allTime}`,
+    `- **This week:** ${stats.thisWeek}`,
+    `- **This month:** ${stats.thisMonth}`,
+  ].join("\n");
+}
+
 function statusAccessories(status: Status, remaining: number | null) {
   if (!status.caffeinated) return undefined;
   if (status.session?.mode === "schedule") {
@@ -225,4 +327,15 @@ function statusMarkdown(status: Status, remaining: number | null): string {
   if (remaining != null) lines.push("", `**${formatDuration(remaining)}** remaining.`);
   if (status.session?.waitName) lines.push("", `Waiting on **${status.session.waitName}**.`);
   return lines.join("\n");
+}
+
+function quickPresetMarkdown(durationMs: number, nowMs: number): string {
+  const end = new Date(nowMs + durationMs);
+  return [
+    `# ${formatDuration(durationMs)}`,
+    "",
+    `Keeps your machine caffeinated for **${formatDuration(durationMs)}**.`,
+    "",
+    `Ends around **${formatClock(end)}**.`,
+  ].join("\n");
 }

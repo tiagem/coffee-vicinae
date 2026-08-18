@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
   "name": "coffee",
   "title": "Coffee",
-  "description": "Keep your machine awake — indefinitely, for a duration, until a time, while an app runs, or on a weekly schedule.",
+  "description": "Keep your machine awake \u2014 indefinitely, for a duration, until a time, while an app runs, or on a weekly schedule.",
   "categories": [
     "Productivity",
     "System"
@@ -129,7 +129,7 @@
     {
       "name": "prevent-lid",
       "title": "",
-      "description": "On Linux, also block sleep when the lid is closed. Ignored on macOS.",
+      "description": "On Linux, also block sleep when the lid is closed.",
       "type": "checkbox",
       "required": false,
       "default": false,
@@ -138,7 +138,7 @@
     {
       "name": "prevent-disk",
       "title": "",
-      "description": "On macOS, prevent the disk from idle-sleeping (caffeinate -m). Ignored on Linux.",
+      "description": "On macOS, prevent the disk from idle-sleeping (caffeinate -m).",
       "type": "checkbox",
       "required": false,
       "default": true,
